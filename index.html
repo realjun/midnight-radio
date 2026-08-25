@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📻 午夜梦境调频 · Midnight Dream Radio</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            amber: {
+              450: '#f7ab1a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Custom Retro Skeuomorphic Styles -->
+  <link rel="stylesheet" href="src/styles/radio.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-stone-950 text-stone-200 min-h-screen relative flex flex-col justify-between selection:bg-amber-500/30">
+
+  <!-- 背景画布（雨夜窗景与霓虹光晕） -->
+  <canvas id="bg-canvas" class="fixed inset-0 pointer-events-none z-0 w-full h-full"></canvas>
+
+  <!-- 顶部导航栏 -->
+  <header class="relative z-10 w-full max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/20 text-stone-950 font-bold text-lg">
+        📻
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-wider text-stone-100 flex items-center gap-2 font-mono">
+          MIDNIGHT RADIO <span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">FM STEREO</span>
+        </h1>
+        <p class="text-xs text-stone-500 font-mono">午夜梦境调频 · 时空声音档案馆</p>
+      </div>
+    </div>
+
+    <!-- 顶部操作区 -->
+    <div class="flex items-center gap-2.5">
+      <button id="open-dream-modal-btn" class="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all hover:scale-105 active:scale-95">
+        <span>✨ 召唤梦境电台</span>
+      </button>
+      <button id="open-settings-btn" class="p-2 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-800 text-stone-400 hover:text-stone-200 transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主收音机主机界面 (Radio Chassis) -->
+  <main class="relative z-10 w-full max-w-5xl mx-auto px-4 py-2 flex-1 flex flex-col justify-center">
+    
+    <div id="radio-app" class="radio-case p-6 md:p-8 relative border border-stone-800/80 backdrop-blur-md">
+
+      <!-- 拟物金属装饰铆钉 -->
+      <div class="absolute top-3 left-3 w-2.5 h-2.5 rounded-full bg-stone-700 shadow-inner"></div>
+      <div class="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-stone-700 shadow-inner"></div>
+      <div class="absolute bottom-3 left-3 w-2.5 h-2.5 rounded-full bg-stone-700 shadow-inner"></div>
+      <div class="absolute bottom-3 right-3 w-2.5 h-2.5 rounded-full bg-stone-700 shadow-inner"></div>
+
+      <!-- 第一行：FM 调频刻度盘与状态指示灯 -->
+      <div class="metal-panel p-4 rounded-xl mb-6 flex flex-col gap-3">
+        <div class="flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-3">
+            <!-- 电源指示灯 -->
+            <div class="flex items-center gap-1.5">
+              <span id="power-indicator" class="w-2.5 h-2.5 rounded-full bg-stone-700 transition-all"></span>
+              <span class="text-stone-400 font-bold">POWER</span>
+            </div>
+            <span id="signal-badge" class="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">STEREO LOCKED</span>
+          </div>
+
+          <!-- 醒目数字频率屏 (7-Segment style) -->
+          <div class="flex items-baseline gap-1 bg-black/80 px-4 py-1 rounded-lg border border-stone-800 shadow-inner">
+            <span class="text-xs text-amber-500/70 font-mono">FM</span>
+            <span id="freq-display" class="text-2xl md:text-3xl font-black font-mono text-amber-400 tracking-wider text-shadow">88.5</span>
+            <span class="text-xs text-stone-500 font-mono">MHz</span>
+          </div>
+        </div>
+
+        <!-- 拟物线性刻度盘 (Tuning Scale) -->
+        <div id="dial-scale" class="relative h-12 bg-stone-950/90 rounded-lg border border-stone-800 overflow-hidden cursor-ew-resize flex items-center px-4 shadow-inner">
+          <!-- 刻度线与频率标注 -->
+          <div class="w-full flex justify-between items-center text-[10px] md:text-xs font-mono text-stone-500 pointer-events-none select-none">
+            <span>88.0</span>
+            <span class="hidden md:inline">90.0</span>
+            <span>92.0</span>
+            <span class="hidden md:inline">94.0</span>
+            <span>96.0</span>
+            <span class="hidden md:inline">98.0</span>
+            <span>100.0</span>
+            <span class="hidden md:inline">102.0</span>
+            <span>104.0</span>
+            <span class="hidden md:inline">106.0</span>
+            <span>108.0</span>
+          </div>
+          <!-- 红色调频指针 -->
+          <div id="dial-needle" class="tuning-dial-needle left-[10%]"></div>
+        </div>
+      </div>
+
+      <!-- 第二行：核心中控区 (左侧示波器/磁带 + 右侧调频旋钮与物理开关) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        
+        <!-- 左侧区：CRT 示波器屏 + VU 表 + 真空管 (7 Cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-4">
+          
+          <!-- CRT 荧光屏与示波器 -->
+          <div class="crt-screen rounded-xl p-3 h-28 relative flex flex-col justify-between">
+            <div class="flex items-center justify-between text-[11px] font-mono text-amber-400/80 z-20">
+              <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> OSCILLOSCOPE / LIVE</span>
+              <span>TIME DOMAIN: 256ch</span>
+            </div>
+            <!-- Canvas 示波器波形 -->
+            <canvas id="oscilloscope-canvas" class="absolute inset-0 w-full h-full z-10"></canvas>
+            <div class="text-[10px] font-mono text-stone-600 z-20 flex justify-between">
+              <span>80s BANDPASS ACTIVE</span>
+              <span>FILTER: WARM TUBE</span>
+            </div>
+          </div>
+
+          <!-- 磁带卡座 + VU 电平表 + 3根发光真空管 -->
+          <div class="metal-panel p-4 rounded-xl flex items-center justify-between gap-4">
+            
+            <!-- 磁带卡座插画与转轮 -->
+            <div class="flex items-center gap-3 bg-stone-950/80 p-2.5 rounded-xl border border-stone-800/80 shadow-inner">
+              <div class="w-10 h-10 rounded-full border-2 border-stone-700 flex items-center justify-center cassette-reel cassette-reel-spin cassette-reel-spin-paused">
+                <div class="w-3 h-3 rounded-full bg-stone-600"></div>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[10px] font-mono text-stone-400 font-bold">CASSETTE TAPE</span>
+                <span class="text-[11px] font-mono text-amber-400/80">SIDE A · REC</span>
+              </div>
+              <div class="w-10 h-10 rounded-full border-2 border-stone-700 flex items-center justify-center cassette-reel cassette-reel-spin cassette-reel-spin-paused">
+                <div class="w-3 h-3 rounded-full bg-stone-600"></div>
+              </div>
+            </div>
+
+            <!-- 拟物模拟 VU 电平表 -->
+            <div class="w-24 h-16 vu-meter-bg rounded-lg relative overflow-hidden flex flex-col justify-end items-center p-1">
+              <div class="text-[8px] font-mono text-stone-900 font-bold absolute top-1">VU LEVEL</div>
+              <!-- 指针 -->
+              <div id="vu-needle" class="vu-needle w-0.5 h-12 bg-red-600 absolute bottom-0"></div>
+            </div>
+
+            <!-- 3根发光真空管 (Vacuum Tubes) -->
+            <div class="flex items-center gap-2">
+              <div class="vacuum-tube w-6 h-14 flex items-center justify-center">
+                <div class="tube-filament"></div>
+              </div>
+              <div class="vacuum-tube w-6 h-14 flex items-center justify-center">
+                <div class="tube-filament"></div>
+              </div>
+              <div class="vacuum-tube w-6 h-14 flex items-center justify-center hidden sm:flex">
+                <div class="tube-filament"></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- 右侧区：巨大金属旋转旋钮 + 物理功能开关 (5 Cols) -->
+        <div class="lg:col-span-5 metal-panel p-5 rounded-xl flex flex-col justify-between items-center gap-4">
+          
+          <div class="w-full flex items-center justify-between">
+            <span class="text-xs font-mono text-stone-400 font-bold">ANALOG TUNER</span>
+            <span class="text-[11px] font-mono text-stone-500">SWEEP 87.5-108</span>
+          </div>
+
+          <!-- 巨大 3D 金属调频旋钮 (Knob) -->
+          <div class="relative flex items-center justify-center">
+            <!-- 刻度圆环 -->
+            <div class="w-36 h-36 rounded-full border border-stone-700/60 flex items-center justify-center shadow-lg">
+              <div id="tuning-knob" class="radio-knob w-28 h-28 rounded-full flex items-center justify-center relative shadow-2xl">
+                <!-- 旋钮白标指示点 -->
+                <div class="w-2 h-2 rounded-full bg-amber-400 absolute top-2 shadow-sm"></div>
+                <!-- 旋钮中心金属盖 -->
+                <div class="w-12 h-12 rounded-full bg-stone-900/90 border border-stone-700 flex items-center justify-center">
+                  <span class="text-[10px] font-mono text-stone-400 font-bold">TUNING</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-stone-500 font-mono text-center">鼠标上下拖拽 / 滚轮旋转调频</p>
+
+          <!-- 底部主控按键 (电源 + 远雷音效) -->
+          <div class="w-full grid grid-cols-2 gap-3 pt-2">
+            <button id="power-btn" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-stone-800 to-stone-900 hover:from-stone-700 hover:to-stone-800 border border-stone-700 text-stone-200 text-xs font-mono font-bold flex items-center justify-center gap-2 shadow transition-all active:scale-95">
+              <span>⏻ 主电源开/关</span>
+            </button>
+            <button id="thunder-btn" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-stone-800 to-stone-900 hover:from-stone-700 hover:to-stone-800 border border-stone-700 text-stone-200 text-xs font-mono font-bold flex items-center justify-center gap-2 shadow transition-all active:scale-95">
+              <span>⚡ 召唤远雷</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- 第三行：当前电台信息 & DJ 独白卡片 -->
+      <div class="metal-panel p-5 md:p-6 rounded-xl mb-6">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-stone-800">
+          <div>
+            <h2 id="station-title" class="text-xl md:text-2xl font-black text-stone-100 font-serif tracking-wide">
+              1995 · 重庆雨夜招待所
+            </h2>
+            <div class="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-stone-400 font-mono">
+              <span id="station-location">📍 中国 重庆 · 临江门二马路</span>
+              <span class="text-stone-700">|</span>
+              <span id="station-dj">🎙️ DJ: 老林</span>
+            </div>
+          </div>
+
+          <!-- 操作按钮组 (听DJ独白 + 导出卡片) -->
+          <div class="flex items-center gap-2.5">
+            <button id="voice-play-btn" class="px-4 py-2 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-xs md:text-sm border border-amber-500/40 hover:bg-amber-500/30 transition-all flex items-center gap-2 shadow">
+              <span>🎙️ 聆听 DJ 独白</span>
+            </button>
+            <button id="export-card-btn" class="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-300 text-xs md:text-sm font-semibold flex items-center gap-1.5 transition-all">
+              <span>🎴 导出电台卡片</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 金句引言与独白正文 -->
+        <div class="pt-4">
+          <p id="station-tagline" class="text-xs md:text-sm font-serif italic text-amber-400 mb-3 font-semibold">
+            “雨水顺着青苔瓦当滴落，屋里热着一壶沱茶。”
+          </p>
+          <div class="bg-stone-950/70 p-4 rounded-xl border border-stone-800/80 shadow-inner">
+            <p id="station-story" class="text-sm md:text-base leading-relaxed text-stone-300 font-serif min-h-[4.5rem]">
+              这里是 FM 88.5，午夜一点十七分。窗外的嘉陵江面上起了薄雾，山城的雨还在断断续续地下着。招待所三楼走廊尽头的旧吊扇吱呀吱呀地转着，茶水炉的热气在玻璃上凝成了一层白雾。如果你也还没睡，不妨把窗户推开一条缝，听听这穿过三十年夜色的雨声……
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 第四行：预设时空电台快捷栏 -->
+      <div class="flex flex-col gap-2 mb-6">
+        <span class="text-xs font-mono text-stone-400 font-bold">🌌 时空电波导航 (PRESET STATIONS)</span>
+        <div id="preset-chips" class="flex flex-wrap gap-2">
+          <!-- 动态渲染各电台标签 -->
+        </div>
+      </div>
+
+      <!-- 第五行：多轨环境音混音器 (Multi-track Sound Mixer) -->
+      <div class="metal-panel p-4 rounded-xl">
+        <div class="flex items-center justify-between mb-3 text-xs font-mono text-stone-400 font-bold">
+          <span>🎚️ 声音环境多轨混音器 (AMBIENT SOUND MIXER)</span>
+          <span class="text-[11px] text-stone-500 font-normal">WEB AUDIO PROCEDURAL SYNTH</span>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- 主音量 -->
+          <div class="flex flex-col gap-1.5 bg-stone-950/60 p-2.5 rounded-lg border border-stone-800">
+            <div class="flex justify-between text-[11px] font-mono">
+              <span class="text-stone-300 font-semibold">🔊 主音量</span>
+            </div>
+            <input id="vol-master" type="range" min="0" max="1" step="0.01" value="0.8">
+          </div>
+          <!-- 雨声强度 -->
+          <div class="flex flex-col gap-1.5 bg-stone-950/60 p-2.5 rounded-lg border border-stone-800">
+            <div class="flex justify-between text-[11px] font-mono">
+              <span class="text-stone-300 font-semibold">🌧️ 雨声/风声</span>
+            </div>
+            <input id="vol-rain" type="range" min="0" max="1" step="0.01" value="0.6">
+          </div>
+          <!-- 黑胶杂音 -->
+          <div class="flex flex-col gap-1.5 bg-stone-950/60 p-2.5 rounded-lg border border-stone-800">
+            <div class="flex justify-between text-[11px] font-mono">
+              <span class="text-stone-300 font-semibold">💿 黑胶底噪</span>
+            </div>
+            <input id="vol-vinyl" type="range" min="0" max="1" step="0.01" value="0.5">
+          </div>
+          <!-- Lo-Fi 和弦 -->
+          <div class="flex flex-col gap-1.5 bg-stone-950/60 p-2.5 rounded-lg border border-stone-800">
+            <div class="flex justify-between text-[11px] font-mono">
+              <span class="text-stone-300 font-semibold">🎹 氛围和弦</span>
+            </div>
+            <input id="vol-drone" type="range" min="0" max="1" step="0.01" value="0.45">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 底部 Footer -->
+  <footer class="relative z-10 w-full max-w-6xl mx-auto px-4 py-4 text-center text-xs font-mono text-stone-500">
+    <p>📻 Midnight Dream Radio · Powered by Procedural Web Audio & AI Generative Engine</p>
+  </footer>
+
+  <!-- 弹窗 1：AI 梦境电台生成器 (Dream Generator Modal) -->
+  <div id="dream-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="radio-case p-6 w-full max-w-lg border border-stone-700 text-stone-200 relative shadow-2xl">
+      <button id="close-dream-modal-btn" class="absolute top-4 right-4 text-stone-400 hover:text-stone-100 font-mono text-lg">✕</button>
+      
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xl">✨</span>
+        <h3 class="text-lg font-bold font-serif text-amber-400">召唤独一无二的梦境电台</h3>
+      </div>
+      <p class="text-xs text-stone-400 mb-4">输入任何你渴望的时空、场景、回忆或心情，AI 将为你编织专属的频率、DJ 与深夜声音。</p>
+
+      <textarea id="dream-prompt-input" rows="3" class="w-full bg-stone-950 p-3 rounded-xl border border-stone-800 text-stone-200 text-sm focus:outline-none focus:border-amber-500 font-serif placeholder:text-stone-600 mb-4" placeholder="例如：大正时代的东京雪夜旧书店、火星3号基地的温室花园、90年代香港天星小轮..."></textarea>
+
+      <!-- 灵感提示词标签 -->
+      <div class="flex flex-wrap gap-1.5 mb-5">
+        <button onclick="document.getElementById('dream-prompt-input').value = '大正时代 · 京都风雪夜里的旧书铺'" class="px-2.5 py-1 rounded-md bg-stone-900 hover:bg-stone-800 text-[11px] text-stone-400 border border-stone-800">❄️ 京都风雪夜</button>
+        <button onclick="document.getElementById('dream-prompt-input').value = '2088 · 火星穹顶下的夜间植物温室'" class="px-2.5 py-1 rounded-md bg-stone-900 hover:bg-stone-800 text-[11px] text-stone-400 border border-stone-800">🚀 火星植物园</button>
+        <button onclick="document.getElementById('dream-prompt-input').value = '1984 · 伦敦维多利亚雨夜的红砖公寓'" class="px-2.5 py-1 rounded-md bg-stone-900 hover:bg-stone-800 text-[11px] text-stone-400 border border-stone-800">🌧️ 伦敦雨夜公寓</button>
+      </div>
+
+      <button id="submit-dream-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2">
+        <span>📻 开启时空调频生成</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 弹窗 2：AI API 设置 (Settings Modal) -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="radio-case p-6 w-full max-w-md border border-stone-700 text-stone-200 relative shadow-2xl">
+      <button id="close-settings-modal-btn" class="absolute top-4 right-4 text-stone-400 hover:text-stone-100 font-mono text-lg">✕</button>
+      
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xl">⚙️</span>
+        <h3 class="text-lg font-bold font-mono text-stone-100">AI 与电台参数设置</h3>
+      </div>
+      <p class="text-xs text-stone-400 mb-4 font-mono">（可选）配置你的 AI API Key 以获得更丰富定制的生成效果。若留空则自动使用内置启发式引擎。</p>
+
+      <div class="flex flex-col gap-3.5 text-xs font-mono mb-5">
+        <div>
+          <label class="block text-stone-400 mb-1">AI 厂商</label>
+          <select id="ai-provider-select" class="w-full bg-stone-950 p-2.5 rounded-lg border border-stone-800 text-stone-200">
+            <option value="gemini">Google Gemini (推荐)</option>
+            <option value="openai">OpenAI / DeepSeek / 兼容接口</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-stone-400 mb-1">API Key</label>
+          <input id="ai-api-key-input" type="password" placeholder="AIzaSy... 或 sk-..." class="w-full bg-stone-950 p-2.5 rounded-lg border border-stone-800 text-stone-200 placeholder:text-stone-600 focus:border-amber-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-stone-400 mb-1">Base URL (兼容 OpenAI 格式时可选)</label>
+          <input id="ai-base-url-input" type="text" placeholder="https://api.openai.com/v1" class="w-full bg-stone-950 p-2.5 rounded-lg border border-stone-800 text-stone-200 placeholder:text-stone-600 focus:border-amber-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-stone-400 mb-1">模型名称</label>
+          <input id="ai-model-input" type="text" value="gemini-1.5-flash" class="w-full bg-stone-950 p-2.5 rounded-lg border border-stone-800 text-stone-200 focus:border-amber-500 focus:outline-none">
+        </div>
+      </div>
+
+      <button id="save-settings-btn" class="w-full py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-100 font-bold text-xs shadow transition-all">
+        保存配置
+      </button>
+    </div>
+  </div>
+
+  <!-- 主程序入口 ES Module -->
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
